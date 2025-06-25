@@ -127,13 +127,16 @@ def delete_certificate_files(hackathon_id, filename):
         return False
 
 def generate_certificate_with_name(hackathon_id, template_filename, participant_name, x_position, y_position, font_size, font_color):
-    """Generate a certificate PDF with participant's name"""
+    """Generate a certificate PDF with participant's name using the same method as preview"""
     try:
         print(f"DEBUG: Generating certificate for {participant_name}")
         
         # Get paths
         pdf_path = get_file_path(hackathon_id, template_filename)
+        preview_path = pdf_path.replace('.pdf', '_preview.png')
+        
         print(f"DEBUG: Source PDF: {pdf_path}")
+        print(f"DEBUG: Preview image: {preview_path}")
         
         # Create output directory
         certificate_dir = os.path.join('uploads', 'certificates', str(hackathon_id), 'generated')
@@ -142,69 +145,36 @@ def generate_certificate_with_name(hackathon_id, template_filename, participant_
         # Create unique filename for this participant
         safe_name = "".join(c for c in participant_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         safe_name = safe_name.replace(' ', '_')
+        
+        # Step 1: Use the EXACT same method as preview - add text to the preview image
+        temp_image_path = add_text_to_image(
+            preview_path, 
+            participant_name, 
+            x_position,  # We don't use this since we auto-center
+            y_position, 
+            font_size, 
+            font_color, 
+            center_x=True
+        )
+        
+        print(f"DEBUG: Generated image with text: {temp_image_path}")
+        
+        # Step 2: Convert the image back to PDF
         certificate_name = f"{safe_name}_certificate.pdf"
         certificate_path = os.path.join(certificate_dir, certificate_name)
         
-        print(f"DEBUG: Output certificate: {certificate_path}")
+        # Convert image to PDF using PIL
+        img = Image.open(temp_image_path)
         
-        # Open the source PDF and add text
-        doc = fitz.open(pdf_path)
-        page = doc[0]  # Get first page
+        # Convert to RGB if necessary (for PDF compatibility)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
         
-        # Get page dimensions
-        page_rect = page.mediabox
-        page_width = page_rect.width
-        page_height = page_rect.height
+        # Save as PDF
+        img.save(certificate_path, 'PDF', resolution=150.0)
+        img.close()
         
-        print(f"DEBUG: PDF page dimensions: {page_width} x {page_height}")
-        
-        # Convert font color from hex to RGB
-        if font_color.startswith('#'):
-            font_color = font_color[1:]
-        r = int(font_color[0:2], 16) / 255.0
-        g = int(font_color[2:4], 16) / 255.0
-        b = int(font_color[4:6], 16) / 255.0
-        
-        # Convert Y coordinate from image coordinate system to PDF coordinate system
-        # The preview works on 2x scaled image, let's use the same approach
-        # In images: Y=0 is top, in PDF: Y=0 is bottom
-        scale_factor = 2.0  # This matches the scale used in pdf_to_image
-        
-        # Simple approach: just scale down and flip Y coordinate
-        # This is exactly what we need to match the preview positioning
-        pdf_y_position = page_height - (y_position / scale_factor)
-        
-        # Font size conversion: preview uses 2x scale, PDF uses 1x scale
-        pdf_font_size = font_size / scale_factor
-        
-        print(f"DEBUG: PDF page dimensions: {page_width} x {page_height}")
-        print(f"DEBUG: Image Y from top: {y_position}")
-        print(f"DEBUG: Scaled down Y: {y_position / scale_factor}")
-        print(f"DEBUG: PDF Y from bottom: {pdf_y_position}")
-        print(f"DEBUG: Font sizes - Image: {font_size}, PDF: {pdf_font_size}")
-        
-        # Calculate accurate text width for centering using the scaled font size
-        text_width = fitz.get_text_length(participant_name, fontname="helv", fontsize=pdf_font_size)
-        pdf_x_position = (page_width - text_width) / 2  # Center horizontally
-        
-        print(f"DEBUG: Text width: {text_width}, Centered X: {pdf_x_position}")
-        print(f"DEBUG: Final position: ({pdf_x_position}, {pdf_y_position})")
-        print(f"DEBUG: Color: RGB({r}, {g}, {b})")
-        
-        # Add text to the PDF
-        page.insert_text(
-            (pdf_x_position, pdf_y_position),  # Position (centered X, converted Y)
-            participant_name,                   # Text
-            fontsize=pdf_font_size,            # Scaled font size
-            color=(r, g, b),                   # RGB color
-            fontname="helv"                    # Font name (Helvetica)
-        )
-        
-        # Save the modified PDF
-        doc.save(certificate_path)
-        doc.close()
-        
-        print(f"DEBUG: Successfully generated certificate with name: {certificate_path}")
+        print(f"DEBUG: Successfully generated certificate: {certificate_path}")
         return certificate_path
         
     except Exception as e:
