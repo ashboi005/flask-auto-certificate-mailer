@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Certificate Template - {{ hackathon.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Upload Certificate Template</h3>
+                <small class="text-muted">For {{ hackathon.name }}</small>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Template Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required 
+                               placeholder="e.g., Winner Certificate, Participation Certificate">
+                        <small class="form-text text-muted">Give your template a descriptive name</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="file" class="form-label">PDF File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".pdf" required>
+                        <small class="form-text text-muted">
+                            Upload a PDF certificate template. Names will be added automatically.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Tips for best results:</h6>
+                        <ul class="mb-0">
+                            <li>Use high-quality PDF files (300 DPI recommended)</li>
+                            <li>Leave space where participant names should appear</li>
+                            <li>Consider the text color contrast with your background</li>
+                            <li>Standard certificate size works best (A4 landscape)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload Template
+                        </button>
+                        <a href="{{ url_for('certificates.list_templates', hackathon_id=hackathon.id) }}" 
+                           class="btn btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// File validation
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.type !== 'application/pdf') {
+        alert('Please select a PDF file.');
+        e.target.value = '';
+    }
+});
+</script>
+{% endblock %}

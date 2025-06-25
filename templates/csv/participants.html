@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Participants - {{ hackathon.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Participants</h1>
+        <p class="text-muted">
+            {{ participants|length }} participants for {{ hackathon.name }}
+            {% if participants %}
+            • {{ participants|selectattr('certificate_sent')|list|length }} certificates sent
+            {% endif %}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('csv.upload_csv', hackathon_id=hackathon.id) }}" 
+           class="btn btn-primary">
+            <i class="fas fa-upload"></i> Upload CSV
+        </a>
+        {% if participants %}
+        <a href="{{ url_for('csv.send_certificates', hackathon_id=hackathon.id) }}" 
+           class="btn btn-success">
+            <i class="fas fa-paper-plane"></i> Send Certificates
+        </a>
+        {% endif %}
+        <a href="{{ url_for('hackathon.hackathon_detail', id=hackathon.id) }}" 
+           class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Hackathon
+        </a>
+    </div>
+</div>
+
+{% if participants %}
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ participants|length }}</h3>
+                    <p class="text-muted mb-0">Total Participants</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ participants|selectattr('certificate_sent')|list|length }}</h3>
+                    <p class="text-muted mb-0">Certificates Sent</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ participants|rejectattr('certificate_sent')|list|length }}</h3>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ templates|length }}</h3>
+                    <p class="text-muted mb-0">Templates Available</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Bulk Actions</h6>
+                    <small class="text-muted">Manage all participants</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-danger btn-sm" onclick="confirmClearAll()">
+                        <i class="fas fa-trash"></i> Clear All Participants
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participants Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Participant List</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Team</th>
+                            <th>Position</th>
+                            <th>Status</th>
+                            <th>Sent At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for participant in participants %}
+                        <tr>
+                            <td>
+                                <strong>{{ participant.name }}</strong>
+                            </td>
+                            <td>
+                                <a href="mailto:{{ participant.email }}" class="text-decoration-none">
+                                    {{ participant.email }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if participant.team_name %}
+                                    <span class="badge bg-info">{{ participant.team_name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Solo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if participant.member_position %}
+                                    <small class="text-muted">Member {{ participant.member_position }}</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if participant.certificate_sent %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Sent
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if participant.sent_at %}
+                                    <small class="text-muted">
+                                        {{ participant.sent_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteParticipant('{{ participant.id }}', '{{ participant.name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <!-- No Participants State -->
+    <div class="text-center py-5">
+        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+        <h3 class="text-muted">No Participants</h3>
+        <p class="text-muted">Upload a CSV file to add participants for certificate distribution.</p>
+        <a href="{{ url_for('csv.upload_csv', hackathon_id=hackathon.id) }}" 
+           class="btn btn-primary">
+            <i class="fas fa-upload"></i> Upload Participant CSV
+        </a>
+    </div>
+{% endif %}
+
+<!-- Delete Participant Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete participant "<span id="participantName"></span>"?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Participant</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear All Modal -->
+<div class="modal fade" id="clearAllModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Clear All</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>all {{ participants|length }} participants</strong>?</p>
+                <p class="text-danger">This action cannot be undone and will remove all participant data.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('csv.clear_all_participants', hackathon_id=hackathon.id) }}" 
+                      method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Clear All Participants</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteParticipant(participantId, participantName) {
+    document.getElementById('participantName').textContent = participantName;
+    document.getElementById('deleteForm').action = `/hackathon/{{ hackathon.id }}/participants/${participantId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function confirmClearAll() {
+    new bootstrap.Modal(document.getElementById('clearAllModal')).show();
+}
+</script>
+{% endblock %}

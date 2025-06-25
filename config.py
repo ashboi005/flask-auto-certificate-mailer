@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
 
@@ -8,6 +9,7 @@ load_dotenv()
 
 db = SQLAlchemy()
 jwt = JWTManager()
+migrate = Migrate()
 
 def configure_app(app: Flask):
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///db.sqlite3'
@@ -18,4 +20,5 @@ def configure_app(app: Flask):
     
     db.init_app(app)
     jwt.init_app(app)
+    migrate.init_app(app, db)
 

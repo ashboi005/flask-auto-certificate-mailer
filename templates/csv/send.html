@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Send Certificates - {{ hackathon.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Send Certificates</h1>
+        <p class="text-muted">Select participants and template for {{ hackathon.name }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('csv.list_participants', hackathon_id=hackathon.id) }}" 
+           class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Participants
+        </a>
+    </div>
+</div>
+
+<form method="POST">
+    <div class="row">
+        <!-- Certificate Template Selection -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">1. Select Certificate Template</h6>
+                </div>
+                <div class="card-body">
+                    {% if templates %}
+                        {% for template in templates %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="template_id" 
+                                   id="template{{ template.id }}" value="{{ template.id }}" required>
+                            <label class="form-check-label" for="template{{ template.id }}">
+                                <strong>{{ template.name }}</strong><br>
+                                <small class="text-muted">
+                                    {{ template.filename }}<br>
+                                    Font: {{ template.font_size }}px, {{ template.font_color }}
+                                </small>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            No certificate templates available. 
+                            <a href="{{ url_for('certificates.list_templates', hackathon_id=hackathon.id) }}">
+                                Upload a template first
+                            </a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Participant Selection -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">2. Select Participants</h6>
+                    <div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAll()">
+                            Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectNone()">
+                            Select None
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="selectPending()">
+                            Select Pending
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if participants %}
+                        <div class="row">
+                            {% for participant in participants %}
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input participant-checkbox" type="checkbox" 
+                                           name="participants" value="{{ participant.id }}" 
+                                           id="participant{{ participant.id }}"
+                                           {% if not participant.certificate_sent %}checked{% endif %}>
+                                    <label class="form-check-label" for="participant{{ participant.id }}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ participant.name }}</strong><br>
+                                                <small class="text-muted">{{ participant.email }}</small>
+                                            </div>
+                                            <div>
+                                                {% if participant.certificate_sent %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i> Sent
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-clock"></i> Pending
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span id="selectedCount">0</span> participants selected
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane"></i> Send Certificates
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No participants found.</p>
+                            <a href="{{ url_for('csv.upload_csv', hackathon_id=hackathon.id) }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload Participants
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Email Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Subject:</h6>
+                <p class="bg-light p-2 rounded">🎉 Your Certificate for {{ hackathon.name }}</p>
+                
+                <h6>Message Body:</h6>
+                <div class="bg-light p-3 rounded">
+                    <p>Dear [Participant Name],</p>
+                    <p>Congratulations! 🎉</p>
+                    <p>We are pleased to share your certificate for {{ hackathon.name }}. Thank you for your participation and contribution to making this event a success.</p>
+                    <p>Your certificate is attached to this email as a PDF file.</p>
+                    <p>Best regards,<br>Certificate Sender</p>
+                    <hr>
+                    <small class="text-muted">This is an automated email. Please do not reply to this message.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update selected count
+function updateSelectedCount() {
+    const checked = document.querySelectorAll('.participant-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = checked;
+}
+
+// Select all participants
+function selectAll() {
+    document.querySelectorAll('.participant-checkbox').forEach(cb => {
+        cb.checked = true;
+    });
+    updateSelectedCount();
+}
+
+// Select no participants
+function selectNone() {
+    document.querySelectorAll('.participant-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+    updateSelectedCount();
+}
+
+// Select only pending participants
+function selectPending() {
+    document.querySelectorAll('.participant-checkbox').forEach(cb => {
+        const label = cb.nextElementSibling;
+        const hasSentBadge = label.querySelector('.badge.bg-success');
+        cb.checked = !hasSentBadge;
+    });
+    updateSelectedCount();
+}
+
+// Add event listeners
+document.querySelectorAll('.participant-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateSelectedCount);
+});
+
+// Initial count
+updateSelectedCount();
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const selectedParticipants = document.querySelectorAll('.participant-checkbox:checked').length;
+    const selectedTemplate = document.querySelector('input[name="template_id"]:checked');
+    
+    if (selectedParticipants === 0) {
+        e.preventDefault();
+        alert('Please select at least one participant.');
+        return;
+    }
+    
+    if (!selectedTemplate) {
+        e.preventDefault();
+        alert('Please select a certificate template.');
+        return;
+    }
+    
+    // Confirm before sending
+    if (!confirm(`Are you sure you want to send certificates to ${selectedParticipants} participants?`)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

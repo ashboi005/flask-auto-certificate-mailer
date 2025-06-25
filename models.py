@@ -33,6 +33,12 @@ class Participant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     hackathon_id = db.Column(db.Integer, db.ForeignKey('hackathon.id'), nullable=False)
+    
+    # Team information
+    team_name = db.Column(db.String(100))  # Name of the team (if applicable)
+    member_position = db.Column(db.Integer)  # 1st, 2nd, or 3rd member
+    
+    # Certificate tracking
     certificate_sent = db.Column(db.Boolean, default=False)
     certificate_template_id = db.Column(db.Integer, db.ForeignKey('certificate_template.id'))
     sent_at = db.Column(db.DateTime)

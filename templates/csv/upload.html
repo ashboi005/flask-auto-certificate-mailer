@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Participants - {{ hackathon.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Upload Participants</h1>
+        <p class="text-muted">Upload CSV file with participant data for {{ hackathon.name }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('csv.list_participants', hackathon_id=hackathon.id) }}" 
+           class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Participants
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upload Form -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">CSV File Upload</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label">Select CSV File</label>
+                        <input type="file" class="form-control" id="csv_file" name="csv_file" 
+                               accept=".csv" required>
+                        <div class="form-text">
+                            Upload a CSV file containing participant names and email addresses.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="replace_existing" 
+                                   name="replace_existing" value="yes">
+                            <label class="form-check-label" for="replace_existing">
+                                Replace existing participants
+                            </label>
+                            <div class="form-text">
+                                Check this to replace all existing participants. Leave unchecked to add new participants only.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload CSV File
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CSV Format Guide -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">CSV Format Requirements</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Your CSV file should be a team registration export with the following columns:</p>
+                
+                <div class="alert alert-info">
+                    <strong>Expected Format:</strong><br>
+                    Team registration CSV with columns like:<br>
+                    • <code>Team Name (leave empty if solo)</code><br>
+                    • <code>Name of 1st Member:</code><br>
+                    • <code>Email of 1st Member:</code><br>
+                    • <code>Name of 2nd Member:</code> (optional)<br>
+                    • <code>Email of 2nd Member:</code> (optional)<br>
+                    • <code>Name of 3rd Member:</code> (optional)<br>
+                    • <code>Email of 3rd Member:</code> (optional)
+                </div>
+                
+                <div class="alert alert-warning">
+                    <small><i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Note:</strong> Each team member will be extracted as a separate participant. Teams can have 1-3 members.</small>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Processing:</strong><br>
+                        • Each team member becomes individual participant<br>
+                        • Duplicate emails are automatically removed<br>
+                        • Invalid email formats are skipped<br>
+                        • Empty member slots are ignored<br>
+                        • Team information is preserved
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Download Sample -->
+        <div class="card mt-3">
+            <div class="card-body text-center">
+                <h6>Need a sample file?</h6>
+                <button class="btn btn-outline-primary btn-sm" onclick="downloadSample()">
+                    <i class="fas fa-download"></i> Download Sample CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadSample() {
+    const csvContent = "name,email\nJohn Doe,john.doe@example.com\nJane Smith,jane.smith@example.com\nBob Johnson,bob.johnson@example.com";
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_participants.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
