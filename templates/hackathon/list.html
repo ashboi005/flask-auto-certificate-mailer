@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Hackathons - Certificate Mailer{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Hackathons</h1>
+    <a href="{{ url_for('hackathon.create_hackathon') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create New Hackathon
+    </a>
+</div>
+
+{% if hackathons %}
+    <div class="row">
+        {% for hackathon in hackathons %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ hackathon.name }}</h5>
+                    <p class="card-text">
+                        {% if hackathon.description %}
+                            {{ hackathon.description[:100] }}{% if hackathon.description|length > 100 %}...{% endif %}
+                        {% else %}
+                            <em>No description</em>
+                        {% endif %}
+                    </p>
+                    <p class="text-muted small">
+                        Created: {{ hackathon.created_at.strftime('%B %d, %Y') }}
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('hackathon.hackathon_detail', id=hackathon.id) }}" 
+                           class="btn btn-primary btn-sm">View Details</a>
+                        <a href="{{ url_for('hackathon.edit_hackathon', id=hackathon.id) }}" 
+                           class="btn btn-outline-secondary btn-sm">Edit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+        <h3 class="text-muted">No Hackathons Yet</h3>
+        <p class="text-muted">Create your first hackathon to get started with certificate management.</p>
+        <a href="{{ url_for('hackathon.create_hackathon') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Your First Hackathon
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

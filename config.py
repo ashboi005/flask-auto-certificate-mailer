@@ -1,13 +1,21 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
 import os
+from dotenv import load_dotenv
 
-db = SQLAlchemy()  # init db instance
+load_dotenv()
 
-def configure_app(app: Flask):  # configures entire flask app
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'  # link db
+db = SQLAlchemy()
+jwt = JWTManager()
+
+def configure_app(app: Flask):
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///db.sqlite3'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.secret_key = os.urandom(24)
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = app.config['SECRET_KEY']  
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  
     
-    db.init_app(app)  # link db instance to app instance
+    db.init_app(app)
+    jwt.init_app(app)
 

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Certificate Mailer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Welcome, {{ user.username }}!</h1>
+              <!-- Quick Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Hackathons</h5>
+                            <h2 class="card-text">{{ total_hackathons }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Certificates Sent</h5>
+                            <h2 class="card-text">{{ certificates_sent }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Templates</h5>
+                            <h2 class="card-text">{{ total_templates }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Participants</h5>
+                            <h2 class="card-text">{{ total_participants }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h3>Quick Actions</h3>
+                    <div class="d-flex gap-3">
+                        <a href="{{ url_for('hackathon.create_hackathon') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create New Hackathon
+                        </a>
+                        <a href="{{ url_for('hackathon.list_hackathons') }}" class="btn btn-secondary">
+                            <i class="fas fa-list"></i> View All Hackathons
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Hackathons</h5>
+                        </div>                        <div class="card-body">
+                            {% if recent_hackathons %}
+                                <div class="list-group">
+                                    {% for hackathon in recent_hackathons %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ hackathon.name }}</h6>
+                                                <p class="mb-1 text-muted">
+                                                    {% if hackathon.description %}
+                                                        {{ hackathon.description[:80] }}{% if hackathon.description|length > 80 %}...{% endif %}
+                                                    {% else %}
+                                                        No description
+                                                    {% endif %}
+                                                </p>
+                                                <small class="text-muted">Created: {{ hackathon.created_at.strftime('%B %d, %Y') }}</small>
+                                            </div>
+                                            <div>
+                                                <a href="{{ url_for('hackathon.hackathon_detail', id=hackathon.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary">View</a>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <a href="{{ url_for('hackathon.list_hackathons') }}" class="btn btn-outline-secondary">
+                                        View All Hackathons
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-4">
+                                    <p>No hackathons created yet.</p>
+                                    <a href="{{ url_for('hackathon.create_hackathon') }}" class="btn btn-primary">Create Your First Hackathon</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
