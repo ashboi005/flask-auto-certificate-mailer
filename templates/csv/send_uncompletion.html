@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Send Uncompletion Emails - {{ hackathon.name }} - Certificate Mailer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Send Uncompletion Emails</h1>
+                <p class="text-muted">{{ hackathon.name }}</p>
+            </div>
+            <a href="{{ url_for('csv.list_participants', hackathon_id=hackathon.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Participants
+            </a>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Uncompletion Email Process:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Select participants whose projects are incomplete</li>
+                <li>Each email will include their specific completion remarks</li>
+                <li>Recipients will get the resubmission form link to improve their project</li>
+                <li>Feedback form link will also be included (if configured)</li>
+                <li>Participants will NOT be marked as "certificate sent" - only as "uncompletion email sent"</li>
+            </ul>
+        </div>
+
+        <!-- Configuration Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Email Configuration Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Resubmission Form Link</h6>
+                        {% if hackathon.resubmission_form_link %}
+                            <p class="text-success">
+                                <i class="fas fa-check-circle"></i> Configured
+                                <br><small class="text-muted">{{ hackathon.resubmission_form_link|truncate(60) }}</small>
+                            </p>
+                        {% else %}
+                            <p class="text-danger">
+                                <i class="fas fa-times-circle"></i> Not configured
+                                <br><small>Please configure this in hackathon settings</small>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Feedback Form Link</h6>
+                        {% if hackathon.feedback_form_link %}
+                            <p class="text-success">
+                                <i class="fas fa-check-circle"></i> Configured
+                                <br><small class="text-muted">{{ hackathon.feedback_form_link|truncate(60) }}</small>
+                            </p>
+                        {% else %}
+                            <p class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> Optional - Not configured
+                                <br><small>Feedback form link won't be included in emails</small>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participant Selection Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Select Participants for Uncompletion Emails</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                                <label class="form-check-label" for="selectAll">
+                                    <strong>Select All Participants</strong>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <span class="badge bg-secondary" id="selectedCount">0 selected</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="5%">
+                                        <input type="checkbox" id="selectAllTable" class="form-check-input">
+                                    </th>
+                                    <th>Participant</th>
+                                    <th>Team</th>
+                                    <th>Completion Remarks</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for participant in participants %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="participants" value="{{ participant.id }}" 
+                                               class="form-check-input participant-checkbox">
+                                    </td>
+                                    <td>
+                                        <strong>{{ participant.name }}</strong>
+                                        <br><small class="text-muted">{{ participant.email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ participant.team_name or 'No Team' }}</span>
+                                        {% if participant.member_position %}
+                                            <br><small class="text-muted">Member {{ participant.member_position }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if participant.completion_remarks %}
+                                            <div class="text-wrap" style="max-width: 300px;">
+                                                {{ participant.completion_remarks|truncate(100) }}
+                                                {% if participant.completion_remarks|length > 100 %}
+                                                    <br><small class="text-muted">
+                                                        <a href="#" data-bs-toggle="modal" data-bs-target="#remarksModal{{ participant.id }}">
+                                                            View full remarks
+                                                        </a>
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No remarks provided</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if participant.certificate_sent %}
+                                            <span class="badge bg-success">Certificate Sent</span>
+                                        {% elif participant.uncompletion_email_sent %}
+                                            <span class="badge bg-warning">Uncompletion Email Sent</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                Total participants: {{ participants|length }}
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('csv.list_participants', hackathon_id=hackathon.id) }}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning" id="sendButton" disabled>
+                                <i class="fas fa-paper-plane"></i> Send Uncompletion Emails
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for full remarks -->
+{% for participant in participants %}
+{% if participant.completion_remarks and participant.completion_remarks|length > 100 %}
+<div class="modal fade" id="remarksModal{{ participant.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Completion Remarks - {{ participant.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Participant:</strong> {{ participant.name }} ({{ participant.email }})</p>
+                <p><strong>Team:</strong> {{ participant.team_name or 'No Team' }}</p>
+                <hr>
+                <p><strong>Completion Remarks:</strong></p>
+                <div class="border p-3 bg-light rounded">
+                    {{ participant.completion_remarks }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const selectAllTableCheckbox = document.getElementById('selectAllTable');
+    const participantCheckboxes = document.querySelectorAll('.participant-checkbox');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const sendButton = document.getElementById('sendButton');
+    
+    function updateSelectedCount() {
+        const checkedBoxes = document.querySelectorAll('.participant-checkbox:checked');
+        const count = checkedBoxes.length;
+        selectedCountSpan.textContent = `${count} selected`;
+        sendButton.disabled = count === 0;
+        
+        // Update select all checkbox states
+        const allChecked = count === participantCheckboxes.length;
+        const someChecked = count > 0;
+        
+        selectAllCheckbox.checked = allChecked;
+        selectAllTableCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        selectAllTableCheckbox.indeterminate = someChecked && !allChecked;
+    }
+    
+    function toggleAllParticipants(checked) {
+        participantCheckboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        updateSelectedCount();
+    }
+    
+    selectAllCheckbox.addEventListener('change', function() {
+        toggleAllParticipants(this.checked);
+    });
+    
+    selectAllTableCheckbox.addEventListener('change', function() {
+        toggleAllParticipants(this.checked);
+    });
+    
+    participantCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+    
+    // Initialize count
+    updateSelectedCount();
+});
+</script>
+{% endblock %}

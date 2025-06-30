@@ -16,6 +16,8 @@ class Hackathon(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     certificate_templates = db.relationship('CertificateTemplate', backref='hackathon', lazy=True)
     participants = db.relationship('Participant', backref='hackathon', lazy=True)
+    resubmission_form_link = db.Column(db.String(255))  # Link for resubmission form
+    feedback_form_link = db.Column(db.String(255))  # Link for feedback form
 
 class CertificateTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -37,6 +39,11 @@ class Participant(db.Model):
     # Team information
     team_name = db.Column(db.String(100))  # Name of the team (if applicable)
     member_position = db.Column(db.Integer)  # 1st, 2nd, or 3rd member
+    
+    # Project completion tracking
+    completion_remarks = db.Column(db.Text)  # Remarks about project completion
+    uncompletion_email_sent = db.Column(db.Boolean, default=False)  # Track if uncompletion email sent
+    uncompletion_email_sent_at = db.Column(db.DateTime)  # When uncompletion email was sent
     
     # Certificate tracking
     certificate_sent = db.Column(db.Boolean, default=False)

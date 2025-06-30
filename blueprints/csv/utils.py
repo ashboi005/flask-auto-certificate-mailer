@@ -64,6 +64,19 @@ def process_csv_file(file_path):
         
         print(f"DEBUG: Found {len(found_columns)} member column sets")
         
+        # Find team name and completion remarks columns
+        team_name_col = None
+        completion_remarks_col = None
+        
+        for col in available_cols:
+            if 'team name' in col or 'team' in col:
+                team_name_col = col
+            elif 'completion remarks' in col or 'remarks' in col or 'completion' in col:
+                completion_remarks_col = col
+        
+        print(f"DEBUG: Team name column: {team_name_col}")
+        print(f"DEBUG: Completion remarks column: {completion_remarks_col}")
+        
         # Extract participants from each team row
         participants = []
         invalid_emails = []
@@ -74,7 +87,14 @@ def process_csv_file(file_path):
         
         for index, row in df.iterrows():
             team_count += 1
-            team_name = row.get('team name (leave empty if solo)', f'Team {team_count}')
+            team_name = row.get(team_name_col, f'Team {team_count}') if team_name_col else f'Team {team_count}'
+            completion_remarks = row.get(completion_remarks_col, '') if completion_remarks_col else ''
+            
+            # Clean completion remarks
+            if pd.notna(completion_remarks):
+                completion_remarks = str(completion_remarks).strip()
+            else:
+                completion_remarks = ''
             
             # Process each member in the team
             for member_info in found_columns:
@@ -101,9 +121,10 @@ def process_csv_file(file_path):
                                     'name': name,
                                     'email': email,
                                     'team_name': str(team_name).strip() if pd.notna(team_name) else f'Team {team_count}',
-                                    'member_position': member_num
+                                    'member_position': member_num,
+                                    'completion_remarks': completion_remarks
                                 })
-                                print(f"DEBUG: Added participant: {name} ({email}) from {team_name}")
+                                print(f"DEBUG: Added participant: {name} ({email}) from {team_name} with remarks: {completion_remarks[:50]}...")
                             else:
                                 print(f"DEBUG: Duplicate email skipped: {email}")
                         else:

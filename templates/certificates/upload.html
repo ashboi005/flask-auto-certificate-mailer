@@ -20,21 +20,22 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="file" class="form-label">PDF File <span class="text-danger">*</span></label>
+                        <label for="file" class="form-label">Template File <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="file" name="file" 
-                               accept=".pdf" required>
+                               accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff" required>
                         <small class="form-text text-muted">
-                            Upload a PDF certificate template. Names will be added automatically.
+                            Upload a certificate template. Supported formats: PDF, PNG, JPEG, GIF, BMP, TIFF.
                         </small>
                     </div>
                     
                     <div class="alert alert-info">
                         <h6><i class="fas fa-info-circle"></i> Tips for best results:</h6>
                         <ul class="mb-0">
-                            <li>Use high-quality PDF files (300 DPI recommended)</li>
+                            <li>Use high-quality files (300 DPI recommended for images)</li>
                             <li>Leave space where participant names should appear</li>
                             <li>Consider the text color contrast with your background</li>
                             <li>Standard certificate size works best (A4 landscape)</li>
+                            <li>Both PDF and image formats (PNG, JPEG) are supported</li>
                         </ul>
                     </div>
                     
@@ -57,9 +58,21 @@
 // File validation
 document.getElementById('file').addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (file && file.type !== 'application/pdf') {
-        alert('Please select a PDF file.');
-        e.target.value = '';
+    if (file) {
+        const allowedTypes = [
+            'application/pdf',
+            'image/png',
+            'image/jpeg',
+            'image/jpg',
+            'image/gif',
+            'image/bmp',
+            'image/tiff'
+        ];
+        
+        if (!allowedTypes.includes(file.type)) {
+            alert('Please select a valid file type (PDF, PNG, JPEG, GIF, BMP, or TIFF).');
+            e.target.value = '';
+        }
     }
 });
 </script>

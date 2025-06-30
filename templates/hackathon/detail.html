@@ -143,6 +143,48 @@
     </div>
 </div>
 
+<!-- Form Links Configuration -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Form Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Resubmission Form Link</h6>
+                        {% if hackathon.resubmission_form_link %}
+                            <p><a href="{{ hackathon.resubmission_form_link }}" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt"></i> {{ hackathon.resubmission_form_link|truncate(50) }}
+                            </a></p>
+                        {% else %}
+                            <p class="text-muted">Not configured</p>
+                        {% endif %}
+                        <small class="text-muted">This link will be sent to participants with incomplete projects.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Feedback Form Link</h6>
+                        {% if hackathon.feedback_form_link %}
+                            <p><a href="{{ hackathon.feedback_form_link }}" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt"></i> {{ hackathon.feedback_form_link|truncate(50) }}
+                            </a></p>
+                        {% else %}
+                            <p class="text-muted">Not configured</p>
+                        {% endif %}
+                        <small class="text-muted">This link will be sent to all participants.</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('hackathon.edit_hackathon', id=hackathon.id) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit"></i> Configure Links
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Danger Zone -->
 <div class="row mt-4">
     <div class="col-12">

@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from blueprints.auth.decorators import login_required
 from config import db
 from models import Hackathon, CertificateTemplate
-from .utils import save_uploaded_file, pdf_to_image, get_file_path, delete_certificate_files, add_text_to_image
+from .utils import save_uploaded_file, template_to_image, get_file_path, delete_certificate_files, add_text_to_image
 
 certificates_bp = Blueprint('certificates', __name__)
 
@@ -36,19 +36,19 @@ def upload_template(current_user, hackathon_id):
         return render_template('certificates/upload.html', hackathon=hackathon, user=current_user)
     
     if not file or file.filename == '':
-        flash('Please select a PDF file.', 'error')
+        flash('Please select a template file (PDF, PNG, JPEG, etc.).', 'error')
         return render_template('certificates/upload.html', hackathon=hackathon, user=current_user)
     
     # Save file
     filename = save_uploaded_file(file, hackathon_id)
     if not filename:
-        flash('Invalid file type. Please upload a PDF file.', 'error')
+        flash('Invalid file type. Please upload a PDF or image file (PNG, JPEG, etc.).', 'error')
         return render_template('certificates/upload.html', hackathon=hackathon, user=current_user)
     
     try:
-        # Convert PDF to image for preview
-        pdf_path = get_file_path(hackathon_id, filename)
-        preview_path = pdf_to_image(pdf_path)
+        # Convert template to image for preview
+        template_path = get_file_path(hackathon_id, filename)
+        preview_path = template_to_image(template_path)
         
         # Create template record
         template = CertificateTemplate(
@@ -103,10 +103,11 @@ def update_preview(current_user, hackathon_id, template_id):
     
     try:
         # Get file paths
-        pdf_path = get_file_path(hackathon_id, template.filename)
-        preview_path = pdf_path.replace('.pdf', '_preview.png')
+        template_path = get_file_path(hackathon_id, template.filename)
+        base, _ = os.path.splitext(template_path)
+        preview_path = f"{base}_preview.png"
         
-        print(f"DEBUG: PDF path: {pdf_path}")
+        print(f"DEBUG: Template path: {template_path}")
         print(f"DEBUG: Preview path: {preview_path}")
         print(f"DEBUG: Preview exists: {os.path.exists(preview_path)}")
         

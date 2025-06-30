@@ -67,6 +67,8 @@ def edit_hackathon(current_user, id):
     
     name = request.form.get('name')
     description = request.form.get('description')
+    resubmission_form_link = request.form.get('resubmission_form_link')
+    feedback_form_link = request.form.get('feedback_form_link')
     
     if not name:
         flash('Hackathon name is required.', 'error')
@@ -75,6 +77,8 @@ def edit_hackathon(current_user, id):
     try:
         hackathon.name = name
         hackathon.description = description
+        hackathon.resubmission_form_link = resubmission_form_link if resubmission_form_link else None
+        hackathon.feedback_form_link = feedback_form_link if feedback_form_link else None
         db.session.commit()
         
         flash(f'Hackathon "{name}" updated successfully!', 'success')

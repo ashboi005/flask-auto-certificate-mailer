@@ -23,6 +23,22 @@
                                   placeholder="Brief description of the hackathon (optional)">{{ hackathon.description or '' }}</textarea>
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="resubmission_form_link" class="form-label">Resubmission Form Link</label>
+                        <input type="url" class="form-control" id="resubmission_form_link" name="resubmission_form_link" 
+                               value="{{ hackathon.resubmission_form_link or '' }}" 
+                               placeholder="https://forms.google.com/... (for incomplete project resubmissions)">
+                        <div class="form-text">This link will be sent to participants whose projects are marked as incomplete.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="feedback_form_link" class="form-label">Feedback Form Link</label>
+                        <input type="url" class="form-control" id="feedback_form_link" name="feedback_form_link" 
+                               value="{{ hackathon.feedback_form_link or '' }}" 
+                               placeholder="https://forms.google.com/... (anonymous feedback form)">
+                        <div class="form-text">This link will be sent to all participants (both certificate and uncompletion emails).</div>
+                    </div>
+                    
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Hackathon
