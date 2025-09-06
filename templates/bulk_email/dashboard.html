@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Email Sender - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>📧 Bulk Email Sender</h1>
+                <p class="text-muted">Send personalized emails to multiple recipients</p>
+            </div>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+            </a>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="row">
+            <!-- Simple Custom Emails -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">✉️ Simple Custom Emails</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Send custom messages to multiple recipients with basic personalization using {name} placeholders.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Upload Excel/CSV contacts</li>
+                            <li><i class="fas fa-check text-success"></i> Write custom message</li>
+                            <li><i class="fas fa-check text-success"></i> Basic {name} personalization</li>
+                            <li><i class="fas fa-check text-success"></i> Send to all or selected contacts</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane"></i> Start Simple Email
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template-Based Emails -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📝 Template-Based Emails</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Create reusable email templates with advanced variable mapping and Google Meet link integration.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Create & save email templates</li>
+                            <li><i class="fas fa-check text-success"></i> Advanced variable system</li>
+                            <li><i class="fas fa-check text-success"></i> CSV column mapping</li>
+                            <li><i class="fas fa-check text-success"></i> Google Meet link management</li>
+                            <li><i class="fas fa-check text-success"></i> Contact selection</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <div class="btn-group w-100">
+                                <a href="{{ url_for('bulk_email.template_dashboard') }}" class="btn btn-success">
+                                    <i class="fas fa-cogs"></i> Manage Templates
+                                </a>
+                                <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-outline-success">
+                                    <i class="fas fa-send"></i> Send Now
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Start Guide -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🚀 Quick Start Guide</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>📧 For Simple Custom Emails:</h6>
+                                <ol>
+                                    <li>Upload your contacts file (Excel/CSV)</li>
+                                    <li>Write your custom message</li>
+                                    <li>Use {name} for personalization</li>
+                                    <li>Send to all or selected contacts</li>
+                                </ol>
+                                <p class="text-muted">
+                                    <strong>Best for:</strong> Quick announcements, newsletters, or simple personalized messages.
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>📝 For Template-Based Emails:</h6>
+                                <ol>
+                                    <li>Create email templates with variables</li>
+                                    <li>Save Google Meet links for reuse</li>
+                                    <li>Upload contacts with multiple columns</li>
+                                    <li>Map CSV columns to template variables</li>
+                                    <li>Select specific recipients and send</li>
+                                </ol>
+                                <p class="text-muted">
+                                    <strong>Best for:</strong> Interview invitations, event scheduling, meeting reminders with dynamic data.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity (if any logs exist) -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📊 Features Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <i class="fas fa-upload text-primary" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">File Upload</h6>
+                                <p class="text-muted small">Excel & CSV support</p>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-users text-success" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Contact Management</h6>
+                                <p class="text-muted small">Email validation & filtering</p>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-magic text-warning" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Personalization</h6>
+                                <p class="text-muted small">Dynamic variables & templates</p>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-paper-plane text-info" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Bulk Sending</h6>
+                                <p class="text-muted small">SMTP with progress tracking</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

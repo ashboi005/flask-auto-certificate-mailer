@@ -11,16 +11,18 @@ load_dotenv()
 
 class EmailSender:
     def __init__(self):
-        self.smtp_server = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+        # Zoho SMTP configuration by default
+        self.smtp_server = os.environ.get('SMTP_SERVER', 'smtp.zoho.com')
         self.smtp_port = int(os.environ.get('SMTP_PORT', 587))
-        self.email_address = os.environ.get('EMAIL_ADDRESS')
+        self.email_address = os.environ.get('EMAIL_ADDRESS')  # Login credentials
         self.email_password = os.environ.get('EMAIL_PASSWORD')
+        self.from_address = os.environ.get('EMAIL_FROM_ADDRESS', self.email_address)  # Actual sender
         self.from_name = os.environ.get('EMAIL_FROM_NAME', 'Certificate Sender')
         
         if not self.email_address or not self.email_password:
             raise ValueError("Email credentials not configured. Please set EMAIL_ADDRESS and EMAIL_PASSWORD in .env file")
         
-        print(f"DEBUG: Email sender initialized - {self.email_address} via {self.smtp_server}:{self.smtp_port}")
+        print(f"DEBUG: Email sender initialized - Login: {self.email_address}, From: {self.from_address} via {self.smtp_server}:{self.smtp_port}")
     
     def create_certificate_email(self, recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link=None):
         """Create email with certificate attachment"""
@@ -28,7 +30,7 @@ class EmailSender:
             msg = MIMEMultipart()
             
             # Email headers
-            msg['From'] = f"{self.from_name} <{self.email_address}>"
+            msg['From'] = f"{self.from_name} <{self.from_address}>"
             msg['To'] = recipient_email
             msg['Subject'] = f"🎉 Your Certificate for {hackathon_name}"
             
@@ -181,7 +183,7 @@ This is an automated email. Please do not reply to this message.
             msg = MIMEMultipart()
             
             # Email headers
-            msg['From'] = f"{self.from_name} <{self.email_address}>"
+            msg['From'] = f"{self.from_name} <{self.from_address}>"
             msg['To'] = recipient_email
             msg['Subject'] = f"Project Resubmission Required - {hackathon_name}"
             

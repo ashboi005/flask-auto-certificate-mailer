@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Email Sent Successfully - Bulk Email Sender{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                
+                <h2 class="text-success">Emails Sent Successfully!</h2>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h3 class="text-success">{{ results.sent }}</h3>
+                            <p class="text-muted mb-0">Emails Sent</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h3 class="text-danger">{{ results.failed }}</h3>
+                            <p class="text-muted mb-0">Failed</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if results.failed > 0 and results.errors %}
+                <div class="alert alert-warning mt-4">
+                    <h5>Some emails failed to send:</h5>
+                    <ul class="mb-0">
+                        {% for error in results.errors[:5] %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                        {% if results.errors|length > 5 %}
+                        <li>... and {{ results.errors|length - 5 }} more errors</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('bulk_email.dashboard') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-home"></i> Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus"></i> Send Another Email
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

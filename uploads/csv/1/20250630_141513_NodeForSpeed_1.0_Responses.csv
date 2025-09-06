@@ -1,0 +1,13 @@
+Timestamp,Team Name (leave empty if solo),Number of Members,Name of 1st Member:,Contact Number of 1st Member:,Email of 1st Member:,Name of 2nd Member:,Contact Number of 2nd Member:,Email of 2nd Member:,Name of 3rd Member:,Contact Number of 3rd Member:,Email of 3rd Member:,Completion Remarks
+6-24-2025 16:16:25,,1,Sukhjit Singh,7814261486,sukhaji65@gmail.com,,,,,,,
+6-24-2025 17:29:31,,1,Neharika sethi,7710343904,neharikasethi4567@gmail.com,,,,,,,"Add a authentication system to differentiate between users, also since you cannot send push notifications via a website you something like twilio or a normal smtp email server or even perhaps email js to send notification to emergency contact if button is not clicked within 24 hours - implement the logic for the same"
+6-24-2025 17:33:45,,1,Anshika Gupta,9501791122,Anshika27.asr@gmail.com,,,,,,,
+6-24-2025 18:00:50,,1,Aprampreet Singh ,8544812040,aprampreet8@gmail.com,,,,,,,
+6-24-2025 18:38:29,,1,Sumit Kumar ,8360671237,sk78146083@gmail.com,,,,,,,Add a storage/memory so that gemini has context of the conversation and can atleast know the context of a few messages
+6-24-2025 20:00:45,Coding Paglus ,3,Ridhima Sharma ,9877235405,ridhishar2712@gmail.com ,Yuvika Khanna ,78144 52504,yuvikakhanna56@gmail.com,Sanchita Mahajan ,9501012675,sanchitamahajan11@gmail.com,
+6-24-2025 22:53:36,404 Not Found ,3,Aameen ,,aameen10019bms@gmail.com,Adeeb,6283019494,adeebkvm@gmail.com,Kritika,9465545077,kritikam221005@gmail.com,"The current UI is too bland, make the UI a bit more presentable"
+6-25-2025 16:07:52,Team sybau,3,Mansukh Singh ,8727874528,mansukhsingh01@gmail.com,Sehaj bhatia,7814740530,sehaj33bhatia@gmail.com,Sayam batra,8360610588,sayambatra2005@gmail.com,Add some frontend to the project to actually show its functioning
+6-25-2025 16:12:04,,1,Gurshabad Singh,7508930013,semideus.dev@gmail.com,,,,,,,
+6-25-2025 20:59:55,The Censorship Crew,3,Akshat Mehta ,9877918214,,Bhumesh Mahajan ,9781873800,Bhumeshmahajan01@gmail.com,Hardik Aggarwal ,+91 78145 25265,aggarwalhardik862@gmail.com,"Make the game more playable by making it slow, its too fast to play right now "
+6-26-2025 19:43:17,,1,Divleen Kaur ,7986183747,divtej22@gmail.com,,,,,,,"Add a backend to the project (for eg something simple like MongoDB) works too, add a simple auth to work with it too"
+6-28-2025 12:20:19,ZeroGravity,2,Jiya,9465863565,jiya.gulati2005@gmail.com,Chaitanya ,+91 99881 95190,chaitanyatalwar77@gmail.com,,,,Add sqlite db to persist data or store in local storage in frontend (if using sql lite then would have to implement some kind of auth too) and add some kind of problem details with it like this was the question and this the solution

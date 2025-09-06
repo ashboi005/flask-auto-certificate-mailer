@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Contacts - Bulk Email Sender{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Upload Contacts</h3>
+                <small class="text-muted">Upload Excel or CSV file with names and emails</small>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="mb-3">
+                        <label class="form-label">Email Type</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check card">
+                                    <div class="card-body">
+                                        <input class="form-check-input" type="radio" name="email_type" 
+                                               id="simpleEmail" value="simple" checked>
+                                        <label class="form-check-label" for="simpleEmail">
+                                            <strong>📧 Simple Custom Email</strong>
+                                        </label>
+                                        <p class="text-muted small mt-1">Write a custom message with basic personalization</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check card">
+                                    <div class="card-body">
+                                        <input class="form-check-input" type="radio" name="email_type" 
+                                               id="templateEmail" value="template">
+                                        <label class="form-check-label" for="templateEmail">
+                                            <strong>📝 Template-Based Email</strong>
+                                        </label>
+                                        <p class="text-muted small mt-1">Use saved templates with advanced variables</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="use_templates" id="useTemplatesInput" value="false">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="contacts_file" class="form-label">Contacts File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="contacts_file" name="contacts_file" 
+                               accept=".xlsx,.xls,.csv" required>
+                        <small class="form-text text-muted" id="fileHelpText">
+                            Upload Excel (.xlsx, .xls) or CSV file. First column should be names, second column should be emails.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> File Format Requirements:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Required Columns:</strong>
+                                <ul class="mb-0">
+                                    <li><strong>Column 1:</strong> Names</li>
+                                    <li><strong>Column 2:</strong> Email addresses</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Supported Formats:</strong>
+                                <ul class="mb-0">
+                                    <li>Excel (.xlsx, .xls)</li>
+                                    <li>CSV (.csv)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload & Process
+                        </button>
+                        <a href="{{ url_for('bulk_email.dashboard') }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Sample Format -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Sample File Format</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Your file should look like this:</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                {% for header in sample_format.headers %}
+                                <th>{{ header }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in sample_format.sample_data %}
+                            <tr>
+                                {% for cell in row %}
+                                <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small">{{ sample_format.description }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// File validation
+document.getElementById('contacts_file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const allowedTypes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            'application/vnd.ms-excel', // .xls
+            'text/csv' // .csv
+        ];
+        
+        const fileName = file.name.toLowerCase();
+        const validExtensions = ['.xlsx', '.xls', '.csv'];
+        const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!allowedTypes.includes(file.type) && !hasValidExtension) {
+            alert('Please select a valid Excel (.xlsx, .xls) or CSV file.');
+            e.target.value = '';
+        }
+    }
+});
+
+// Email type selection
+document.addEventListener('DOMContentLoaded', function() {
+    const simpleRadio = document.getElementById('simpleEmail');
+    const templateRadio = document.getElementById('templateEmail');
+    const useTemplatesInput = document.getElementById('useTemplatesInput');
+    const fileHelpText = document.getElementById('fileHelpText');
+    
+    function updateEmailType() {
+        if (templateRadio.checked) {
+            useTemplatesInput.value = 'true';
+            fileHelpText.innerHTML = 'Upload Excel/CSV with multiple columns. Column headers will be mapped to template variables.';
+        } else {
+            useTemplatesInput.value = 'false';
+            fileHelpText.innerHTML = 'Upload Excel (.xlsx, .xls) or CSV file. First column should be names, second column should be emails.';
+        }
+    }
+    
+    simpleRadio.addEventListener('change', updateEmailType);
+    templateRadio.addEventListener('change', updateEmailType);
+});
+</script>
+{% endblock %}

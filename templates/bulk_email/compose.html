@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Compose Email - Bulk Email Sender{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Compose Bulk Email</h1>
+                <p class="text-muted">Ready to send to {{ stats.total_contacts }} contacts</p>
+            </div>
+            <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-secondary">
+                <i class="fas fa-upload"></i> Upload Different File
+            </a>
+        </div>
+
+        <!-- Upload Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Upload Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-success">{{ stats.total_contacts }}</h3>
+                            <p class="text-muted mb-0">Valid Contacts</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-warning">{{ stats.invalid_count or 0 }}</h3>
+                            <p class="text-muted mb-0">Invalid Emails</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-secondary">{{ stats.skipped_rows or 0 }}</h3>
+                            <p class="text-muted mb-0">Empty Rows</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-info">{{ contacts|length }}</h3>
+                            <p class="text-muted mb-0">Ready to Send</p>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <p class="mb-0">
+                    <strong>Columns used:</strong> 
+                    {{ stats.name_column or 'Name' }} (names), {{ stats.email_column or 'Email' }} (emails)
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Email Composition Form -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Compose Your Email</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" id="emailForm">
+                            <div class="mb-3">
+                                <label for="sender_name" class="form-label">Sender Name (Optional)</label>
+                                <input type="text" class="form-control" id="sender_name" name="sender_name" 
+                                       placeholder="Your Name or Organization">
+                                <small class="form-text text-muted">
+                                    If left empty, will use "Bulk Email Sender"
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Email Subject <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="subject" name="subject" required
+                                       placeholder="Enter your email subject">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="custom_message" class="form-label">Email Message <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="custom_message" name="custom_message" rows="8" required
+                                          placeholder="Write your message here...
+
+You can use {name} to personalize the email with each recipient's name.
+
+For example:
+Hello {name},
+Thank you for your interest in our service..."></textarea>
+                                <small class="form-text text-muted">
+                                    <strong>Tip:</strong> Use <code>{name}</code> to include the recipient's name in your message
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                                    <i class="fas fa-eye"></i> Preview Email
+                                </button>
+                                <button type="submit" class="btn btn-success" id="sendBtn">
+                                    <i class="fas fa-paper-plane"></i> Send to All ({{ stats.total_contacts }})
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Preview -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Contact Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">First 5 contacts from your file:</p>
+                        <div class="list-group">
+                            {% for contact in contacts[:5] %}
+                            <div class="list-group-item">
+                                <strong>{{ contact.name }}</strong>
+                                <br><small class="text-muted">{{ contact.email }}</small>
+                            </div>
+                            {% endfor %}
+                            {% if contacts|length > 5 %}
+                            <div class="list-group-item text-center">
+                                <small class="text-muted">And {{ contacts|length - 5 }} more...</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Email Preview -->
+                <div class="card mt-3" id="previewCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Email Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="previewContent">
+                            <!-- Preview will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const previewBtn = document.getElementById('previewBtn');
+    const previewCard = document.getElementById('previewCard');
+    const previewContent = document.getElementById('previewContent');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    previewBtn.addEventListener('click', function() {
+        const subject = document.getElementById('subject').value;
+        const message = document.getElementById('custom_message').value;
+        const senderName = document.getElementById('sender_name').value;
+        
+        if (!subject || !message) {
+            alert('Please fill in subject and message fields');
+            return;
+        }
+        
+        // Show loading
+        previewContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading preview...</div>';
+        previewCard.style.display = 'block';
+        
+        // Fetch preview
+        const params = new URLSearchParams({
+            subject: subject,
+            custom_message: message,
+            sender_name: senderName
+        });
+        
+        fetch(`{{ url_for('bulk_email.preview_email') }}?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    previewContent.innerHTML = `
+                        <div class="mb-2">
+                            <strong>To:</strong> ${data.preview.to}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Subject:</strong> ${data.preview.subject}
+                        </div>
+                        <hr>
+                        <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+${data.preview.body}
+                        </div>
+                    `;
+                } else {
+                    previewContent.innerHTML = `<div class="text-danger">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                previewContent.innerHTML = `<div class="text-danger">Error loading preview</div>`;
+            });
+    });
+    
+    // Confirm before sending
+    document.getElementById('emailForm').addEventListener('submit', function(e) {
+        const totalContacts = parseInt('{{ stats.total_contacts }}');
+        if (!confirm('Are you sure you want to send this email to ' + totalContacts + ' recipients?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

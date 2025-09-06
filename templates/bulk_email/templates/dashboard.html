@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Email Templates - Template Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>📧 Email Template Manager</h1>
+                <p class="text-muted">Create and manage reusable email templates with dynamic variables</p>
+            </div>
+            <div>
+                <a href="{{ url_for('bulk_email.dashboard') }}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left"></i> Back to Bulk Email
+                </a>
+                <a href="{{ url_for('bulk_email.create_template') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Template
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">📋 Quick Actions</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                    <i class="fas fa-upload"></i> Upload Contacts & Send Template Email
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('bulk_email.create_template') }}" class="btn btn-outline-success btn-sm w-100 mb-2">
+                                    <i class="fas fa-plus"></i> Create New Template
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3 class="text-primary">{{ templates|length }}</h3>
+                        <p class="text-muted mb-0">Templates Created</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Templates -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📝 Your Email Templates</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if templates %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Subject</th>
+                                            <th>Variables</th>
+                                            <th>Updated</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for template in templates %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ template.name }}</strong>
+                                                {% if template.description %}
+                                                <br><small class="text-muted">{{ template.description[:50] }}{% if template.description|length > 50 %}...{% endif %}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ template.subject }}">
+                                                    {{ template.subject }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% for var in template.variables %}
+                                                <span class="badge bg-secondary me-1">{{var}}</span>
+                                                {% endfor %}
+                                                {% if template.static_variables %}
+                                                <br><small class="text-success mt-1">
+                                                    <i class="fas fa-thumbtack"></i> Static: 
+                                                    {% for key, value in template.static_variables.items() %}
+                                                    <span class="badge bg-success me-1">{{key}}</span>
+                                                    {% endfor %}
+                                                </small>
+                                                {% endif %}
+                                                {% if not template.variables and not template.static_variables %}
+                                                <small class="text-muted">No variables</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ template.updated_at.strftime('%b %d, %Y') }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-info preview-template-btn" 
+                                                            data-template-id="{{ template.id }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <a href="{{ url_for('bulk_email.edit_template', template_id=template.id) }}" class="btn btn-outline-primary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-danger delete-template-btn" 
+                                                            data-template-id="{{ template.id }}" 
+                                                            data-template-name="{{ template.name }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">No Templates Yet</h5>
+                                <p class="text-muted">Create your first email template to get started!</p>
+                                <a href="{{ url_for('bulk_email.create_template') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Create First Template
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Meet Links -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🔗 Meet Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Add New Meet Link Form -->
+                        <form method="POST" action="{{ url_for('bulk_email.create_meet_link') }}" class="mb-3">
+                            <div class="mb-2">
+                                <input type="text" class="form-control form-control-sm" name="name" 
+                                       placeholder="Link Name (e.g., Interview Room 1)" required>
+                            </div>
+                            <div class="mb-2">
+                                <input type="url" class="form-control form-control-sm" name="url" 
+                                       placeholder="https://meet.google.com/..." required>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control form-control-sm" name="description" 
+                                       placeholder="Optional description">
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                <i class="fas fa-plus"></i> Add Link
+                            </button>
+                        </form>
+
+                        <hr>
+
+                        <!-- Existing Meet Links -->
+                        {% if meet_links %}
+                            <div class="list-group">
+                                {% for link in meet_links %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <strong>{{ link.name }}</strong>
+                                            <br>
+                                            <small class="text-muted text-truncate d-block" style="max-width: 200px;">
+                                                {{ link.url }}
+                                            </small>
+                                            {% if link.description %}
+                                            <small class="text-info">{{ link.description }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('{{ link.url }}')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <a href="{{ link.url }}" target="_blank" class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center">
+                                <i class="fas fa-link"></i><br>
+                                No meet links saved yet
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewTemplate(templateId) {
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const previewContent = document.getElementById('previewContent');
+    
+    previewContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading preview...</div>';
+    modal.show();
+    
+    const url = '{{ url_for("bulk_email.preview_template", template_id=0) }}'.replace('0', templateId);
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                previewContent.innerHTML = `
+                    <div class="mb-3">
+                        <strong>Subject:</strong> ${data.preview.subject}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Variables Used:</strong>
+                        <div class="mt-1">
+                            ${Object.entries(data.preview.variables_used).map(([key, value]) => 
+                                `<span class="badge bg-info me-1">${key}: ${value}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <hr>
+                    <div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #0d6efd;">
+${data.preview.body}
+                    </div>
+                `;
+            } else {
+                previewContent.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            previewContent.innerHTML = `<div class="alert alert-danger">Error loading preview</div>`;
+        });
+}
+
+function deleteTemplate(templateId, templateName) {
+    if (confirm(`Are you sure you want to delete the template "${templateName}"? This action cannot be undone.`)) {
+        // TODO: Implement delete functionality
+        alert('Delete functionality will be implemented in the next update');
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-outline-primary');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 1000);
+    });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview template buttons
+    document.querySelectorAll('.preview-template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            previewTemplate(templateId);
+        });
+    });
+    
+    // Delete template buttons
+    document.querySelectorAll('.delete-template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            const templateName = this.getAttribute('data-template-name');
+            deleteTemplate(templateId, templateName);
+        });
+    });
+    
+    // Copy to clipboard buttons
+    document.querySelectorAll('button[onclick^="copyToClipboard"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.closest('.list-group-item').querySelector('small').textContent.trim();
+            copyToClipboard(url);
+        });
+    });
+});
+</script>
+{% endblock %}

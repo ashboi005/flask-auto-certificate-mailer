@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Email Template - Template Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>📝 Edit Email Template</h1>
+                <p class="text-muted">Update your email template</p>
+            </div>
+            <a href="{{ url_for('bulk_email.template_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Templates
+            </a>
+        </div>
+
+        <div class="row">
+            <!-- Template Form -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Template Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" id="templateForm">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Template Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       value="{{ template.name }}" placeholder="e.g., Interview Invitation, Event Reminder">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="description" name="description"
+                                       value="{{ template.description or '' }}" placeholder="Brief description of when to use this template">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Email Subject <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="subject" name="subject" required
+                                       value="{{ template.subject }}" placeholder="Use &#123;&#123;variable&#125;&#125; for dynamic content">
+                                <small class="form-text text-muted">
+                                    Use <code>&#123;&#123;variable_name&#125;&#125;</code> for dynamic content that will be replaced from CSV data.
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="body" class="form-label">Email Body <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="body" name="body" rows="12" required>{{ template.body }}</textarea>
+                                <small class="form-text text-muted">
+                                    <strong>Tips:</strong> Use <code>&#123;&#123;variable_name&#125;&#125;</code> for dynamic content. 
+                                    Common variables: &#123;&#123;name&#125;&#125;, &#123;&#123;email&#125;&#125;, &#123;&#123;time_slot&#125;&#125;, &#123;&#123;meet_link&#125;&#125;, &#123;&#123;position&#125;&#125;, etc.
+                                </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div id="variablesList"></div>
+                            </div>
+                            
+                            <!-- Static Variables Section -->
+                            <div class="mb-3" id="staticVariablesSection" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">🔧 Static Variables (Set Once)</h6>
+                                        <small class="text-muted">These values will be the same for all emails</small>
+                                    </div>
+                                    <div class="card-body" id="staticVariablesList">
+                                        <!-- Static variables will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary" id="previewBtn">
+                                    <i class="fas fa-eye"></i> Preview Template
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Update Template
+                                </button>
+                                <a href="{{ url_for('bulk_email.template_dashboard') }}" class="btn btn-secondary">
+                                    Cancel
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Variables -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Current Variables</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if template.variables %}
+                            <p class="text-muted">Variables currently in this template:</p>
+                            <div class="mb-3">
+                                {% for var in template.variables %}
+                                <span class="badge bg-info me-1 mb-1">{{ var }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No variables in this template yet.</p>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <h6>💡 Variable Guidelines</h6>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item px-0">
+                                <code>&#123;&#123;name&#125;&#125;</code><br>
+                                <small class="text-muted">Recipient's name</small>
+                            </div>
+                            <div class="list-group-item px-0">
+                                <code>&#123;&#123;email&#125;&#125;</code><br>
+                                <small class="text-muted">Recipient's email</small>
+                            </div>
+                            <div class="list-group-item px-0">
+                                <code>&#123;&#123;time_slot&#125;&#125;</code><br>
+                                <small class="text-muted">Meeting time</small>
+                            </div>
+                            <div class="list-group-item px-0">
+                                <code>&#123;&#123;meet_link&#125;&#125;</code><br>
+                                <small class="text-muted">Meeting link</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Extract and display variables from template
+function updateVariablesList() {
+    const subject = document.getElementById('subject').value;
+    const body = document.getElementById('body').value;
+    const text = subject + ' ' + body;
+    
+    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
+    const variables = [];
+    let match;
+    
+    while ((match = variableRegex.exec(text)) !== null) {
+        if (!variables.includes(match[1])) {
+            variables.push(match[1]);
+        }
+    }
+    
+    const variablesList = document.getElementById('variablesList');
+    const staticVariablesSection = document.getElementById('staticVariablesSection');
+    const staticVariablesList = document.getElementById('staticVariablesList');
+    
+    if (variables.length > 0) {
+        // Show dynamic variables
+        variablesList.innerHTML = '<label class="form-label">Detected Variables:</label>' +
+            '<div class="d-flex flex-wrap gap-1 mb-2">' +
+                variables.map(variable => '<span class="badge bg-success">' + variable + '</span>').join('') +
+            '</div>' +
+            '<small class="form-text text-muted">' +
+                'These variables will be replaced with data from your CSV file or set as static values below.' +
+            '</small>';
+        
+        // Show static variables section
+        staticVariablesSection.style.display = 'block';
+        
+        // Common static variables - expanded list
+        const commonStaticVars = [
+            'company_name', 'company', 'meet_link', 'meet_url', 'meeting_link', 
+            'event_name', 'event', 'venue', 'location', 'organizer_name', 'organizer',
+            'interviewer_name', 'interviewer', 'from_name', 'sender_name',
+            'event_date', 'event_time', 'program_name', 'course_name'
+        ];
+        const staticVarsToShow = variables.filter(v => 
+            commonStaticVars.includes(v.toLowerCase()) || 
+            v.toLowerCase().includes('company') || 
+            v.toLowerCase().includes('meet') || 
+            v.toLowerCase().includes('link') || 
+            v.toLowerCase().includes('organizer') ||
+            v.toLowerCase().includes('event') ||
+            v.toLowerCase().includes('venue') ||
+            v.toLowerCase().includes('interview')
+        );
+        
+        // Get existing static variables from template
+        const existingStaticVarsJson = '{{ template.static_variables|tojson|safe }}';
+        const existingStaticVars = existingStaticVarsJson ? JSON.parse(existingStaticVarsJson) : {};
+        
+        if (staticVarsToShow.length > 0 || Object.keys(existingStaticVars).length > 0) {
+            let staticVarsHtml = '<p class="mb-3"><strong>Set static values for these variables:</strong></p>';
+            
+            // Show inputs for detected static variables
+            staticVarsToShow.forEach(variable => {
+                const currentValue = existingStaticVars[variable] || '';
+                staticVarsHtml += '<div class="mb-3">' +
+                    '<label class="form-label">&#123;&#123;' + variable + '&#125;&#125;</label>' +
+                    '<input type="text" class="form-control" name="static_' + variable + '" ' +
+                           'value="' + currentValue + '" placeholder="Enter value for ' + variable + '">' +
+                    '<small class="form-text text-muted">' +
+                        getVariableDescription(variable) +
+                    '</small>' +
+                    '</div>';
+            });
+            
+            // Show inputs for existing static variables that might not be detected in current template
+            Object.keys(existingStaticVars).forEach(variable => {
+                if (!staticVarsToShow.includes(variable)) {
+                    staticVarsHtml += '<div class="mb-3">' +
+                        '<label class="form-label">&#123;&#123;' + variable + '&#125;&#125; <span class="badge bg-secondary">Existing</span></label>' +
+                        '<input type="text" class="form-control" name="static_' + variable + '" ' +
+                               'value="' + existingStaticVars[variable] + '" placeholder="Enter value for ' + variable + '">' +
+                        '<small class="form-text text-muted">' +
+                            'Existing static variable (may not be used in current template)' +
+                        '</small>' +
+                        '</div>';
+                }
+            });
+            
+            staticVarsHtml += '<div class="alert alert-info">' +
+                '<small><strong>Note:</strong> Static variables will have the same value for all recipients. ' +
+                'Variables not set here will need to be mapped to CSV columns when sending emails.</small>' +
+                '</div>';
+            
+            staticVariablesList.innerHTML = staticVarsHtml;
+        } else {
+            staticVariablesList.innerHTML = '<p class="text-muted">No common static variables detected. All variables will be mapped from CSV data.</p>';
+        }
+    } else {
+        variablesList.innerHTML = '';
+        staticVariablesSection.style.display = 'none';
+    }
+}
+
+// Get description for variable
+function getVariableDescription(variable) {
+    const descriptions = {
+        'company_name': 'Your company or organization name',
+        'company': 'Your company or organization name',
+        'meet_link': 'Google Meet or Zoom meeting link',
+        'meet_url': 'Google Meet or Zoom meeting link',
+        'meeting_link': 'Google Meet or Zoom meeting link',
+        'event_name': 'Name of the event or program',
+        'event': 'Name of the event or program',
+        'venue': 'Event location or venue',
+        'location': 'Event location or venue',
+        'organizer_name': 'Name of the organizer or contact person',
+        'organizer': 'Name of the organizer or contact person',
+        'interviewer_name': 'Name of the interviewer',
+        'interviewer': 'Name of the interviewer',
+        'from_name': 'Sender name',
+        'sender_name': 'Sender name',
+        'event_date': 'Date of the event',
+        'event_time': 'Time of the event',
+        'program_name': 'Name of the program or course',
+        'course_name': 'Name of the course',
+        'name': 'Will be mapped from CSV (recipient name)',
+        'email': 'Will be mapped from CSV (recipient email)',
+        'time_slot': 'Will be mapped from CSV (individual time slots)',
+        'position': 'Will be mapped from CSV (job position)'
+    };
+    return descriptions[variable.toLowerCase()] || 'Value for ' + variable + ' variable';
+}
+
+// Preview template
+function previewTemplate() {
+    const subject = document.getElementById('subject').value;
+    const body = document.getElementById('body').value;
+    
+    if (!subject || !body) {
+        alert('Please fill in subject and body fields');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const previewContent = document.getElementById('previewContent');
+    
+    // Generate sample preview
+    let previewSubject = subject;
+    let previewBody = body;
+    
+    // First, get static variables from the form
+    const staticVariables = {};
+    const staticInputs = document.querySelectorAll('input[name^="static_"]');
+    staticInputs.forEach(input => {
+        if (input.value.trim()) {
+            const varName = input.name.substring(7); // Remove 'static_' prefix
+            staticVariables[varName] = input.value.trim();
+        }
+    });
+    
+    // Replace common variables with sample data (fallback for variables not set as static)
+    const sampleData = {
+        'name': 'John Doe',
+        'email': 'john@example.com',
+        'position': 'Software Developer',
+        'company_name': 'TechCorp Inc.',
+        'time_slot': '2:00 PM - 3:00 PM, Dec 15, 2025',
+        'meet_link': 'https://meet.google.com/abc-defg-hij',
+        'interviewer_name': 'Jane Smith',
+        'event_name': 'Tech Conference 2025',
+        'event_date': 'December 15, 2025',
+        'event_time': '10:00 AM',
+        'venue': 'Conference Center',
+        'organizer_name': 'Event Team',
+        'meeting_topic': 'Project Planning',
+        'agenda': 'Discuss project timeline and requirements'
+    };
+    
+    // Merge static variables with sample data (static variables take priority)
+    const combinedData = { ...sampleData, ...staticVariables };
+    
+    // Replace variables with actual data (static variables take priority)
+    for (const [key, value] of Object.entries(combinedData)) {
+        const regex = new RegExp('\\{\\{\\s*' + key + '\\s*\\}\\}', 'g');
+        previewSubject = previewSubject.replace(regex, value);
+        previewBody = previewBody.replace(regex, value);
+    }
+    
+    // Replace any remaining variables with placeholder
+    previewSubject = previewSubject.replace(/\{\{\s*(\w+)\s*\}\}/g, '[sample_$1]');
+    previewBody = previewBody.replace(/\{\{\s*(\w+)\s*\}\}/g, '[sample_$1]');
+    
+    previewContent.innerHTML = '<div class="mb-3">' +
+        '<strong>To:</strong> John Doe &lt;john@example.com&gt;' +
+        '</div>' +
+        '<div class="mb-3">' +
+        '<strong>Subject:</strong> ' + previewSubject +
+        '</div>' +
+        '<hr>' +
+        '<div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">' +
+        previewBody +
+        '</div>' +
+        '<div class="mt-3">' +
+        '<small class="text-muted">' +
+        '<strong>Note:</strong> This is a preview with sample data. Actual emails will use data from your CSV file.' +
+        '</small>' +
+        '</div>';
+    
+    modal.show();
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Update variables list on page load and populate existing static variables
+    updateVariablesList();
+    
+    // Pre-populate static variable inputs with existing values
+    const existingStaticVarsJson = '{{ template.static_variables|tojson|safe }}';
+    const existingStaticVars = existingStaticVarsJson ? JSON.parse(existingStaticVarsJson) : {};
+    for (const [varName, value] of Object.entries(existingStaticVars)) {
+        const input = document.querySelector('input[name="static_' + varName + '"]');
+        if (input) {
+            input.value = value;
+        }
+    }
+    
+    // Update variables list when typing
+    document.getElementById('subject').addEventListener('input', updateVariablesList);
+    document.getElementById('body').addEventListener('input', updateVariablesList);
+    
+    // Preview button
+    document.getElementById('previewBtn').addEventListener('click', function() {
+        console.log('Preview button clicked');
+        previewTemplate();
+    });
+    
+    // Form validation
+    document.getElementById('templateForm').addEventListener('submit', function(e) {
+        const name = document.getElementById('name').value.trim();
+        const subject = document.getElementById('subject').value.trim();
+        const body = document.getElementById('body').value.trim();
+        
+        if (!name || !subject || !body) {
+            e.preventDefault();
+            alert('Please fill in all required fields (Name, Subject, and Body)');
+        }
+    });
+});
+</script>
+{% endblock %}

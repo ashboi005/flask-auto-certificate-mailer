@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+
+{% block title %}Send Template Email - Template Manager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>📧 Send Template Email</h1>
+                <p class="text-muted">Send personalized emails using templates to {{ stats.total_contacts }} contacts</p>
+            </div>
+            <div>
+                <a href="{{ url_for('bulk_email.upload_contacts') }}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-upload"></i> Upload Different File
+                </a>
+                <a href="{{ url_for('bulk_email.template_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Templates
+                </a>
+            </div>
+        </div>
+
+        <!-- Upload Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Upload Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-success">{{ stats.total_contacts }}</h3>
+                            <p class="text-muted mb-0">Valid Contacts</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h3 class="text-info">{{ csv_columns|length }}</h3>
+                            <p class="text-muted mb-0">CSV Columns</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Available Columns:</strong>
+                        <div class="mt-1">
+                            {% for col in csv_columns %}
+                            <span class="badge bg-secondary me-1">{{ col }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-md-8">
+                <form method="POST" id="templateSendForm">
+                    <!-- Template Selection -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">1️⃣ Select Template</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if templates %}
+                                <div class="row">
+                                    {% for template in templates %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card template-card" data-template-id="{{ template.id }}">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="template_id" 
+                                                           value="{{ template.id }}" id="template{{ template.id }}" required>
+                                                    <label class="form-check-label" for="template{{ template.id }}">
+                                                        <strong>{{ template.name }}</strong>
+                                                    </label>
+                                                </div>
+                                                <small class="text-muted d-block mt-1">{{ template.description or 'No description' }}</small>
+                                                <div class="mt-2">
+                                                    <small><strong>Subject:</strong> {{ template.subject[:50] }}{% if template.subject|length > 50 %}...{% endif %}</small>
+                                                </div>
+                                                <div class="mt-1">
+                                                    <small><strong>Variables:</strong>
+                                                    {% for var in template.variables %}
+                                                    <span class="badge bg-info badge-sm">{{ var }}</span>
+                                                    {% endfor %}
+                                                    </small>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 preview-template-btn" 
+                                                        data-template-id="{{ template.id }}">
+                                                    <i class="fas fa-eye"></i> Preview
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-inbox text-muted" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">No Templates Available</h6>
+                                    <p class="text-muted">Create a template first before sending emails.</p>
+                                    <a href="{{ url_for('bulk_email.create_template') }}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Create Template
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Variable Mapping -->
+                    <div class="card mb-4" id="variableMappingCard" style="display: none;">
+                        <div class="card-header">
+                            <h5 class="mb-0">2️⃣ Map Template Variables</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Map template variables to your CSV columns:</p>
+                            <div id="variableMappingContent">
+                                <!-- Variable mapping will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meet Link Selection -->
+                    <div class="card mb-4" id="meetLinkCard" style="display: none;">
+                        <div class="card-header">
+                            <h5 class="mb-0">3️⃣ Meeting Link (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Saved Meet Links</label>
+                                    <select class="form-select" name="meet_link_id" id="meetLinkSelect">
+                                        <option value="">Select a saved link (optional)</option>
+                                        {% for link in meet_links %}
+                                        <option value="{{ link.id }}">{{ link.name }} - {{ link.url[:40] }}...</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Or Enter Custom Link</label>
+                                    <input type="url" class="form-control" name="meet_link_custom" id="meetLinkCustom"
+                                           placeholder="https://meet.google.com/...">
+                                    <small class="form-text text-muted">This will override any saved link selection</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Selection -->
+                    <div class="card mb-4" id="contactSelectionCard" style="display: none;">
+                        <div class="card-header">
+                            <h5 class="mb-0">4️⃣ Select Recipients</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllContacts" checked>
+                                    <label class="form-check-label" for="selectAllContacts">
+                                        <strong>Send to all {{ stats.total_contacts }} contacts</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="collapse" id="individualSelection">
+                                <p class="text-muted">Or select specific contacts:</p>
+                                <div class="row">
+                                    {% for contact in contacts %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input contact-checkbox" type="checkbox" 
+                                                   name="selected_contacts" value="{{ contact.email }}" 
+                                                   id="contact{{ loop.index }}">
+                                            <label class="form-check-label" for="contact{{ loop.index }}">
+                                                {{ contact.name }} ({{ contact.email }})
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="selectAllContacts()">
+                                    Select All
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="clearAllContacts()">
+                                    Clear All
+                                </button>
+                            </div>
+                            
+                            <button class="btn btn-outline-primary btn-sm mt-2" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#individualSelection">
+                                Choose Specific Contacts
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sender Info -->
+                    <div class="card mb-4" id="senderInfoCard" style="display: none;">
+                        <div class="card-header">
+                            <h5 class="mb-0">5️⃣ Sender Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="sender_name" class="form-label">Sender Name (Optional)</label>
+                                <input type="text" class="form-control" id="sender_name" name="sender_name" 
+                                       placeholder="Your Name or Organization">
+                                <small class="form-text text-muted">
+                                    If left empty, will use "Template Email Sender"
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Send Button -->
+                    <div class="card" id="sendCard" style="display: none;">
+                        <div class="card-body text-center">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-paper-plane"></i> Send Template Emails
+                            </button>
+                            <div class="mt-2">
+                                <small class="text-muted">This will send personalized emails to selected recipients</small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="col-md-4">
+                <div class="card sticky-top">
+                    <div class="card-header">
+                        <h5 class="mb-0">📝 Email Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="emailPreview">
+                            <p class="text-muted text-center">Select a template to see preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<div class="modal fade" id="templatePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="templatePreviewContent">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let csvColumns = [];
+let templates = [];
+
+// Template selection handling
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up template selection...'); // Debug log
+    
+    // Load data safely
+    try {
+        const csvColumnsData = '{{ csv_columns|tojson|safe }}';
+        csvColumns = JSON.parse(csvColumnsData);
+        
+        const templatesData = '{{ templates|tojson|safe }}';
+        templates = JSON.parse(templatesData);
+        
+        console.log('Loaded templates:', templates); // Debug log
+        console.log('Loaded CSV columns:', csvColumns); // Debug log
+    } catch (e) {
+        console.error('Error loading data:', e);
+        csvColumns = [];
+        templates = [];
+    }
+    
+    const templateRadios = document.querySelectorAll('input[name="template_id"]');
+    console.log('Found template radios:', templateRadios.length); // Debug log
+    
+    templateRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                const templateId = parseInt(this.value);
+                const template = templates.find(t => t.id === templateId);
+                
+                console.log('Selected template:', template); // Debug log
+                console.log('CSV columns:', csvColumns); // Debug log
+                
+                if (template) {
+                    console.log('About to show cards...'); // Debug log
+                    showVariableMapping(template);
+                    showMeetLinkCard(template);
+                    showContactSelection();
+                    showSenderInfo();
+                    showSendButton();
+                    updateEmailPreview(template);
+                    console.log('All cards should be visible now'); // Debug log
+                }
+            }
+        });
+    });
+    
+    // Preview template buttons
+    document.querySelectorAll('.preview-template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const templateId = this.getAttribute('data-template-id');
+            previewTemplate(templateId);
+        });
+    });
+    
+    // Contact selection handling
+    const selectAllCheckbox = document.getElementById('selectAllContacts');
+    const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            contactCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    // Form submission
+    document.getElementById('templateSendForm').addEventListener('submit', function(e) {
+        const selectedTemplate = document.querySelector('input[name="template_id"]:checked');
+        if (!selectedTemplate) {
+            e.preventDefault();
+            alert('Please select a template');
+            return;
+        }
+        
+        const selectAll = document.getElementById('selectAllContacts');
+        const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
+        
+        if (selectAll && !selectAll.checked && selectedContacts.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one contact to send to');
+            return;
+        }
+        
+        const totalContacts = '{{ stats.total_contacts }}';
+        const confirmation = (selectAll && selectAll.checked) ? 
+            'Send template email to all ' + totalContacts + ' contacts?' :
+            'Send template email to ' + selectedContacts.length + ' selected contact(s)?';
+            
+        if (!confirm(confirmation)) {
+            e.preventDefault();
+        }
+    });
+    
+    // Test: Force show contact selection after 2 seconds to see if elements exist
+    setTimeout(function() {
+        console.log('Testing: Force showing all sections...');
+        const contactCard = document.getElementById('contactSelectionCard');
+        const senderCard = document.getElementById('senderInfoCard');
+        const sendCard = document.getElementById('sendCard');
+        const variableMappingCard = document.getElementById('variableMappingCard');
+        
+        console.log('Contact card element:', contactCard);
+        console.log('Sender card element:', senderCard);
+        console.log('Send card element:', sendCard);
+        console.log('Variable mapping card element:', variableMappingCard);
+        
+        if (contactCard) contactCard.style.display = 'block';
+        if (senderCard) senderCard.style.display = 'block';
+        if (sendCard) sendCard.style.display = 'block';
+        if (variableMappingCard) {
+            variableMappingCard.style.display = 'block';
+            console.log('Force showing variable mapping card');
+        }
+        
+        // Also try to trigger the template selection manually
+        const templateRadio = document.querySelector('input[name="template_id"]:checked');
+        if (templateRadio && templates.length > 0) {
+            const templateId = parseInt(templateRadio.value);
+            const template = templates.find(t => t.id === templateId);
+            if (template) {
+                console.log('Force triggering showVariableMapping with template:', template);
+                showVariableMapping(template);
+            }
+        }
+    }, 3000);
+});
+
+function showVariableMapping(template) {
+    console.log('showVariableMapping called with template:', template); // Debug
+    
+    const card = document.getElementById('variableMappingCard');
+    const content = document.getElementById('variableMappingContent');
+    
+    console.log('Variable mapping card element:', card); // Debug
+    console.log('Variable mapping content element:', content); // Debug
+    console.log('Available CSV columns:', csvColumns); // Debug - CHECK THIS!
+    
+    if (!card || !content) {
+        console.error('Variable mapping elements not found!');
+        return;
+    }
+    
+    // FORCE SHOW TEST - Create mapping for time_slot and name regardless of filtering
+    console.log('FORCING VARIABLE MAPPING DISPLAY FOR TESTING');
+    let testMappingHTML = '<div class="alert alert-warning mb-3">' +
+                         '<strong>🔧 DEBUG MODE:</strong> Force-showing variable mapping' +
+                         '</div>' +
+                         '<h6 class="mb-3"><i class="fas fa-table"></i> Variables Need Mapping</h6>' +
+                         '<div class="row">' +
+                         '<div class="col-md-6 mb-3">' +
+                         '<label class="form-label"><code>{{time_slot}}</code></label>' +
+                         '<select class="form-select" name="mapping_time_slot" required>' +
+                         '<option value="">Select CSV column...</option>' +
+                         '<option value="time_slot" selected>time_slot</option>' +
+                         '<option value="name">name</option>' +
+                         '<option value="email">email</option>' +
+                         '</select>' +
+                         '</div>' +
+                         '<div class="col-md-6 mb-3">' +
+                         '<label class="form-label"><code>{{name}}</code></label>' +
+                         '<select class="form-select" name="mapping_name" required>' +
+                         '<option value="">Select CSV column...</option>' +
+                         '<option value="name" selected>name</option>' +
+                         '<option value="time_slot">time_slot</option>' +
+                         '<option value="email">email</option>' +
+                         '</select>' +
+                         '</div>' +
+                         '</div>';
+    
+    content.innerHTML = testMappingHTML;
+    card.style.display = 'block';
+    console.log('FORCED variable mapping section should now be visible');
+    return; // Skip the rest for now
+    
+    if (!csvColumns || csvColumns.length === 0) {
+        console.error('No CSV columns available! csvColumns:', csvColumns);
+        content.innerHTML = '<div class="alert alert-danger">' +
+                           '<i class="fas fa-exclamation-triangle"></i> ' +
+                           'No CSV columns detected. Please ensure you have uploaded a valid CSV file.' +
+                           '</div>';
+        card.style.display = 'block';
+        return;
+    }
+    
+    // Filter out static variables from variables that need mapping
+    const dynamicVariables = template.variables.filter(variable => 
+        !template.static_variables || !template.static_variables.hasOwnProperty(variable)
+    );
+    
+    console.log('Template variables:', template.variables); // Debug
+    console.log('Static variables:', template.static_variables); // Debug
+    console.log('Static variables keys:', template.static_variables ? Object.keys(template.static_variables) : 'none'); // Debug
+    console.log('Dynamic variables needing mapping:', dynamicVariables); // Debug
+    console.log('CSV columns available for mapping:', csvColumns); // Debug
+    
+    if (dynamicVariables.length > 0 || (template.static_variables && Object.keys(template.static_variables).length > 0)) {
+        let mappingHTML = '';
+        
+        // Show static variables first (if any)
+        if (template.static_variables && Object.keys(template.static_variables).length > 0) {
+            mappingHTML += '<div class="alert alert-success mb-3">' +
+                          '<h6 class="mb-2"><i class="fas fa-thumbtack"></i> Static Variables (Already Set)</h6>' +
+                          '<p class="mb-2">These variables have fixed values and don\'t need CSV mapping:</p>' +
+                          '<div class="d-flex flex-wrap gap-2">';
+            
+            for (const [key, value] of Object.entries(template.static_variables)) {
+                mappingHTML += '<div class="badge bg-success p-2">' +
+                              '<strong>{{' + key + '}}:</strong> ' + 
+                              (value.length > 30 ? value.substring(0, 30) + '...' : value) +
+                              '</div>';
+            }
+            
+            mappingHTML += '</div></div>';
+        }
+        
+        // Show dynamic variables that need mapping
+        if (dynamicVariables.length > 0) {
+            console.log('Creating mapping HTML for dynamic variables:', dynamicVariables); // Debug
+            mappingHTML += '<h6 class="mb-3"><i class="fas fa-table"></i> Dynamic Variables (Map to CSV Columns)</h6>' +
+                          '<div class="row">';
+            
+            dynamicVariables.forEach(variable => {
+                console.log('Processing variable for mapping:', variable); // Debug
+                // Try to auto-suggest mapping
+                let suggestedColumn = '';
+                const varLower = variable.toLowerCase();
+                
+                for (const col of csvColumns) {
+                    const colLower = col.toLowerCase();
+                    if (colLower === varLower || 
+                        (varLower.includes('name') && colLower.includes('name')) ||
+                        (varLower.includes('email') && colLower.includes('email')) ||
+                        (varLower.includes('time') && colLower.includes('time')) ||
+                        (varLower.includes('slot') && colLower.includes('slot'))) {
+                        suggestedColumn = col;
+                        console.log('Auto-suggested mapping:', variable, '->', col); // Debug
+                        break;
+                    }
+                }
+                
+                mappingHTML += '<div class="col-md-6 mb-3">' +
+                              '<label class="form-label"><code>{{' + variable + '}}</code></label>' +
+                              '<select class="form-select" name="mapping_' + variable + '" required>' +
+                              '<option value="">Select CSV column...</option>' +
+                              csvColumns.map(col => 
+                                  '<option value="' + col + '" ' + (col === suggestedColumn ? 'selected' : '') + '>' + col + '</option>'
+                              ).join('') +
+                              '</select>' +
+                              '</div>';
+            });
+            
+            mappingHTML += '</div>';
+        } else {
+            mappingHTML += '<div class="alert alert-info">' +
+                          '<i class="fas fa-check-circle"></i> All variables in this template are set as static values. No CSV mapping required!' +
+                          '</div>';
+        }
+        
+        console.log('Setting mapping HTML:', mappingHTML.substring(0, 200) + '...'); // Debug
+        content.innerHTML = mappingHTML;
+        card.style.display = 'block';
+        console.log('Variable mapping card should now be visible'); // Debug
+    } else {
+        console.log('No variables to map, hiding card'); // Debug
+        card.style.display = 'none';
+    }
+}
+
+function showMeetLinkCard(template) {
+    const card = document.getElementById('meetLinkCard');
+    const hasMeetVariable = template.variables.some(v => 
+        v.toLowerCase().includes('meet') || v.toLowerCase().includes('link')
+    );
+    
+    card.style.display = hasMeetVariable ? 'block' : 'none';
+}
+
+function showContactSelection() {
+    console.log('Showing contact selection card'); // Debug log
+    document.getElementById('contactSelectionCard').style.display = 'block';
+}
+
+function showSenderInfo() {
+    console.log('Showing sender info card'); // Debug log
+    document.getElementById('senderInfoCard').style.display = 'block';
+}
+
+function showSendButton() {
+    console.log('Showing send button card'); // Debug log
+    document.getElementById('sendCard').style.display = 'block';
+}
+
+function updateEmailPreview(template) {
+    const preview = document.getElementById('emailPreview');
+    
+    console.log('Updating email preview for template:', template); // Debug log
+    
+    if (!preview) {
+        console.error('Preview element not found!');
+        return;
+    }
+    
+    // Generate sample preview
+    let previewSubject = template.subject;
+    let previewBody = template.body.substring(0, 200) + '...';
+    
+    // Sample data
+    const sampleData = {
+        'name': 'John Doe',
+        'email': 'john@example.com',
+        'time_slot': '2:00 PM - 3:00 PM',
+        'meet_link': 'https://meet.google.com/...',
+        'position': 'Software Developer'
+    };
+    
+    // Replace variables with sample data
+    template.variables.forEach(variable => {
+        const regex = new RegExp('\\{\\{\\s*' + variable + '\\s*\\}\\}', 'g');
+        const sampleValue = sampleData[variable] || '[' + variable + ']';
+        previewSubject = previewSubject.replace(regex, sampleValue);
+        previewBody = previewBody.replace(regex, sampleValue);
+    });
+    
+    preview.innerHTML = '<div class="mb-2">' +
+        '<strong>Template:</strong> ' + template.name +
+        '</div>' +
+        '<div class="mb-2">' +
+        '<strong>Subject:</strong><br>' +
+        '<small class="text-muted">' + previewSubject + '</small>' +
+        '</div>' +
+        '<div class="mb-2">' +
+        '<strong>Body Preview:</strong><br>' +
+        '<small class="text-muted" style="white-space: pre-wrap;">' + previewBody + '</small>' +
+        '</div>' +
+        '<div class="mb-2">' +
+        '<strong>Variables:</strong><br>' +
+        template.variables.map(v => '<span class="badge bg-info badge-sm">' + v + '</span>').join(' ') +
+        '</div>' +
+        '<small class="text-muted">This preview uses sample data. Actual emails will use your CSV data.</small>';
+}
+
+function previewTemplate(templateId) {
+    const modal = new bootstrap.Modal(document.getElementById('templatePreviewModal'));
+    const content = document.getElementById('templatePreviewContent');
+    
+    content.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading preview...</div>';
+    modal.show();
+    
+    const url = '{{ url_for("bulk_email.preview_template", template_id=0) }}'.replace('0', templateId);
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                content.innerHTML = '<div class="mb-3">' +
+                    '<strong>Subject:</strong> ' + data.preview.subject +
+                    '</div>' +
+                    '<hr>' +
+                    '<div style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">' +
+                    data.preview.body +
+                    '</div>';
+            } else {
+                content.innerHTML = '<div class="alert alert-danger">Error: ' + data.error + '</div>';
+            }
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="alert alert-danger">Error loading preview</div>';
+        });
+}
+
+function selectAllContacts() {
+    document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function clearAllContacts() {
+    document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAllContacts').checked = false;
+}
+</script>
+
+<style>
+.template-card {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.template-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.template-card.selected {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.sticky-top {
+    top: 1rem;
+}
+</style>
+{% endblock %}
