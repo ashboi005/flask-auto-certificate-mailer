@@ -411,12 +411,12 @@ def send_template_email(current_user):
             print("DEBUG: No contacts found in session")  # Debug
         
         return render_template('bulk_email/templates/send.html',
-                             templates=templates,
-                             meet_links=meet_links,
-                             contacts=contacts[:5],  # Show first 5 for preview
-                             stats=stats,
-                             csv_columns=csv_columns,
-                             user=current_user)
+                     templates=templates,
+                     meet_links=meet_links,
+                     contacts=contacts,  # Pass ALL contacts so user can select any
+                     stats=stats,
+                     csv_columns=csv_columns,
+                     user=current_user)
     
     # Handle POST request - send template emails
     template_id = request.form.get('template_id')

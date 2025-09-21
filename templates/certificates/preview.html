@@ -41,8 +41,18 @@
                             Y Position: <span id="yValue">{{ template.name_y_position|int }}</span>px
                         </label>
                         <input type="range" class="form-range" id="yPosition" 
-                               min="0" max="600" value="{{ template.name_y_position|int }}" step="5">
-                        <small class="form-text text-muted">Adjust vertical position to align with the line</small>
+                               min="0" max="1200" value="{{ template.name_y_position|int }}" step="5">
+                        <div class="row mt-2">
+                            <div class="col-8">
+                                <small class="form-text text-muted">Use slider for quick adjustment (0-1200px)</small>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control form-control-sm" id="yPositionManual" 
+                                       min="0" max="2000" value="{{ template.name_y_position|int }}" 
+                                       placeholder="Custom value">
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Enter custom value above for positions beyond 1200px (max: 2000px)</small>
                     </div>
                     
                     <div class="mb-3">
@@ -128,6 +138,24 @@
 document.getElementById('yPosition').addEventListener('input', function() {
     document.getElementById('yValue').textContent = this.value;
     document.getElementById('saveYPosition').value = this.value;
+    document.getElementById('yPositionManual').value = this.value;
+});
+
+// Handle manual Y position input
+document.getElementById('yPositionManual').addEventListener('input', function() {
+    const value = parseInt(this.value) || 0;
+    const clampedValue = Math.min(Math.max(value, 0), 2000); // Clamp between 0-2000
+    
+    document.getElementById('yValue').textContent = clampedValue;
+    document.getElementById('saveYPosition').value = clampedValue;
+    
+    // Update slider if value is within range
+    if (clampedValue <= 1200) {
+        document.getElementById('yPosition').value = clampedValue;
+    }
+    
+    // Update the input field to show clamped value
+    this.value = clampedValue;
 });
 
 document.getElementById('fontSize').addEventListener('input', function() {
@@ -139,15 +167,19 @@ document.getElementById('fontColor').addEventListener('input', function() {
     document.getElementById('saveFontColor').value = this.value;
 });
 
-// Auto-update preview on input changes (removed xPosition since it's auto-centered)
-['sampleName', 'yPosition', 'fontSize', 'fontColor'].forEach(id => {
+// Auto-update preview on input changes
+['sampleName', 'yPosition', 'yPositionManual', 'fontSize', 'fontColor'].forEach(id => {
     document.getElementById(id).addEventListener('input', debounce(updatePreview, 500));
 });
 
 function updatePreview() {
     const sampleName = document.getElementById('sampleName').value;
     const xPosition = 0; // Will be auto-centered, so x position doesn't matter
-    const yPosition = document.getElementById('yPosition').value;
+    // Use manual input value if it's higher than slider max, otherwise use slider
+    const yPosition = Math.max(
+        document.getElementById('yPosition').value,
+        document.getElementById('yPositionManual').value || 0
+    );
     const fontSize = document.getElementById('fontSize').value;
     const fontColor = document.getElementById('fontColor').value;
     

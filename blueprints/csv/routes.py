@@ -195,7 +195,8 @@ def send_certificates(current_user, hackathon_id):
                         'name': participant.name,
                         'email': participant.email,
                         'certificate_path': certificate_path,
-                        'participant_id': participant.id
+                        'participant_id': participant.id,
+                        'completion_remarks': participant.completion_remarks
                     })
                 else:
                     flash(f'Failed to generate certificate for {participant.name}', 'warning')

@@ -24,7 +24,7 @@ class EmailSender:
         
         print(f"DEBUG: Email sender initialized - Login: {self.email_address}, From: {self.from_address} via {self.smtp_server}:{self.smtp_port}")
     
-    def create_certificate_email(self, recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link=None):
+    def create_certificate_email(self, recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link=None, completion_remarks=None):
         """Create email with certificate attachment"""
         try:
             msg = MIMEMultipart()
@@ -43,6 +43,15 @@ We would also appreciate if you gave an anonymous feedback about the hackathon e
 🔗 Anonymous Feedback Form: {feedback_link}
 """
             
+            # Completion remarks section
+            remarks_section = ""
+            if completion_remarks and completion_remarks.strip():
+                remarks_section = f"""
+
+📝 Remarks:
+{completion_remarks}
+"""
+            
             body = f"""Dear {recipient_name},
 
 Congratulations! 🎉
@@ -50,7 +59,7 @@ Congratulations! 🎉
 We are pleased to share your certificate for {hackathon_name}. Thank you for your participation and contribution to making this event a success.
 
 Your certificate is attached to this email as a high-quality image file.
-{feedback_section}
+{remarks_section}{feedback_section}
 Best regards,
 {self.from_name}
 
@@ -109,11 +118,11 @@ This is an automated email. Please do not reply to this message.
             print(f"ERROR sending email: {e}")
             return {'success': False, 'error': str(e)}
     
-    def send_certificate(self, recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link=None):
+    def send_certificate(self, recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link=None, completion_remarks=None):
         """Send certificate to a single recipient"""
         print(f"DEBUG: Preparing to send certificate to {recipient_name} ({recipient_email})")
         
-        msg = self.create_certificate_email(recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link)
+        msg = self.create_certificate_email(recipient_name, recipient_email, hackathon_name, certificate_path, feedback_link, completion_remarks)
         if msg:
             return self.send_email(msg)
         return {'success': False, 'error': 'Failed to create email'}
@@ -121,7 +130,7 @@ This is an automated email. Please do not reply to this message.
     def send_bulk_certificates(self, participants_data, hackathon_name, feedback_link=None, progress_callback=None):
         """
         Send certificates to multiple participants
-        participants_data: list of dict with 'name', 'email', 'certificate_path'
+        participants_data: list of dict with 'name', 'email', 'certificate_path', 'completion_remarks' (optional)
         """
         print(f"DEBUG: Starting bulk certificate sending for {len(participants_data)} participants")
         
@@ -136,12 +145,16 @@ This is an automated email. Please do not reply to this message.
             try:
                 print(f"DEBUG: Processing participant {i+1}/{len(participants_data)}")
                 
+                # Get completion remarks if available
+                completion_remarks = participant.get('completion_remarks', None)
+                
                 result = self.send_certificate(
                     participant['name'],
                     participant['email'],
                     hackathon_name,
                     participant['certificate_path'],
-                    feedback_link
+                    feedback_link,
+                    completion_remarks
                 )
                 
                 if result['success']:
